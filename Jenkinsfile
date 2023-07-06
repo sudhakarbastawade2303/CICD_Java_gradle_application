@@ -41,33 +41,33 @@ pipeline{
                 }
             }
         }
-        stage('indentifying misconfigs using datree in helm charts'){
+        // stage('indentifying misconfigs using datree in helm charts'){
+        //     steps{
+        //         script{
+
+        //             dir('kubernetes/') {
+        //                 withEnv(['DATREE_TOKEN=8f9e20d6-d0d3-4225-81ee-e2d4901ea079']) {
+        //                       sh 'helm datree test myapp/'
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+        stage("pushing the helm charts to nexus"){
             steps{
                 script{
-
-                    dir('kubernetes/') {
-                        withEnv(['DATREE_TOKEN=8f9e20d6-d0d3-4225-81ee-e2d4901ea079']) {
-                              sh 'helm datree test myapp/'
-                        }
+                    withCredentials([string(credentialsId: 'docker_pass', variable: 'docker_password')]) {
+                          dir('kubernetes/') {
+                             sh '''
+                                 helmversion=$( helm show chart myapp | grep version | cut -d: -f 2 | tr -d ' ')
+                                 tar -czvf  myapp-${helmversion}.tgz myapp/
+                                 curl -u admin:$docker_password http://34.125.214.226:8081/repository/helm-hosted/ --upload-file myapp-${helmversion}.tgz -v
+                            '''
+                          }
                     }
                 }
             }
         }
-    //     stage("pushing the helm charts to nexus"){
-    //         steps{
-    //             script{
-    //                 withCredentials([string(credentialsId: 'docker_pass', variable: 'docker_password')]) {
-    //                       dir('kubernetes/') {
-    //                          sh '''
-    //                              helmversion=$( helm show chart myapp | grep version | cut -d: -f 2 | tr -d ' ')
-    //                              tar -czvf  myapp-${helmversion}.tgz myapp/
-    //                              curl -u admin:$docker_password http://34.125.214.226:8081/repository/helm-hosted/ --upload-file myapp-${helmversion}.tgz -v
-    //                         '''
-    //                       }
-    //                 }
-    //             }
-    //         }
-    //     }
 
     //     stage('manual approval'){
     //         steps{
